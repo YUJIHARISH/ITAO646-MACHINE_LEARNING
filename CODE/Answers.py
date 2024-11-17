@@ -447,3 +447,57 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 mse = mean_squared_error(y_test, y_pred)
 print(f"Mean Squared Error: {mse}")
+
+
+#EM ALGORITHM
+
+
+import numpy as np
+
+np.random.seed(42)
+n_samples = 300
+
+data1 = np.random.normal(0, 1, n_samples//2)
+data2 = np.random.normal(4, 1.5, n_samples//2)
+data = np.concatenate([data1, data2])
+data = data.reshape(-1, 1)  
+
+def em_gmm(X, n_components=2, n_iterations=50):
+    n_samples = X.shape[0]
+    
+    means = np.random.choice(X.flatten(), n_components).reshape(-1, 1)
+    variances = np.ones(n_components)
+    weights = np.ones(n_components) / n_components
+    
+    for iteration in range(n_iterations):
+       
+        responsibilities = np.zeros((n_samples, n_components))
+        
+        for k in range(n_components):
+            
+            gaussian = 1/np.sqrt(2*np.pi*variances[k]) * \
+                      np.exp(-0.5*(X-means[k])**2/variances[k])
+            responsibilities[:, k] = weights[k] * gaussian.flatten()
+            
+        responsibilities /= responsibilities.sum(axis=1, keepdims=True)
+        
+        Nk = responsibilities.sum(axis=0)
+        
+        for k in range(n_components):
+            means[k] = (responsibilities[:, k] * X.flatten()).sum() / Nk[k]
+      
+        for k in range(n_components):
+            variances[k] = (responsibilities[:, k] * (X.flatten() - means[k])**2).sum() / Nk[k]
+        
+        weights = Nk / n_samples
+        
+    return means, variances, weights
+
+means, variances, weights = em_gmm(data)
+
+print("\nFinal Parameters:")
+for i in range(len(means)):
+    print(f"\nComponent {i+1}:")
+    print(f"Mean: {means[i][0]:.2f}")
+    print(f"Variance: {variances[i]:.2f}")
+    print(f"Weight: {weights[i]:.2f}")
