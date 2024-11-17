@@ -24,66 +24,41 @@ print("Most specific hypothesis:", result)
 
 #CANDIDATE ELIMINATION
 
-import pandas as pd
-import numpy as np
+import csv
 
-def candidate_elimination(data):
-    attributes = list(data.columns[:-1])
-    num_attributes = len(attributes)
-    
-    G = [['?'] * num_attributes]
-    S = ['0'] * num_attributes
-    
-    for _, row in data.iterrows():
-        if row.iloc[-1] == 'Yes':
-            for i in range(num_attributes):
-                if S[i] == '0':
-                    S[i] = row.iloc[i]
-                elif S[i] != row.iloc[i]:
-                    S[i] = '?'
-            G = [g for g in G if all(g[i] == '?' or g[i] == S[i] for i in range(num_attributes))]
-        else:
-            G = [g for g in G if any(g[i] != '?' and g[i] != row.iloc[i] for i in range(num_attributes))]
-            for i in range(num_attributes):
-                if S[i] != '?' and S[i] != row.iloc[i]:
-                    S[i] = '?'
-                    G.append(['?' if j != i else S[i] for j in range(num_attributes)])
-    
-    return S, G
+with open("trainingexamples.csv") as f:
+    csv_file = csv.reader(f)
+    data = list(csv_file)
 
-data = pd.read_csv('training_data.csv')
+    specific = data[0][:-1]
+    general = [['?' for i in range(len(specific))] for j in range(len(specific))]
 
-S, G = candidate_elimination(data)
-print("S:", S)
-print("G:", G)
+    for i in data:
+        if i[-1] == "Yes":
+            for j in range(len(specific)):
+                if i[j] != specific[j]:
+                    specific[j] = "?"
+                    general[j][j] = "?"
 
+        elif i[-1] == "No":
+            for j in range(len(specific)):
+                if i[j] != specific[j]:
+                    general[j][j] = specific[j]
+                else:
+                    general[j][j] = "?"
 
+        print("\nStep " + str(data.index(i)+1) + " of Candidate Elimination Algorithm")
+        print(specific)
+        print(general)
 
-#ID3 DECISION TREE
-
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-import pandas as pd
-
-data = pd.read_csv('data.csv')
-X = data.drop('target', axis=1)
-y = data['target']
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-clf = DecisionTreeClassifier(criterion='entropy')
-clf.fit(X_train, y_train)
-
-y_pred = clf.predict(X_test)
-
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy}")
-
-new_sample = [[5.1, 3.5, 1.4, 0.2]] 
-prediction = clf.predict(new_sample)
-print(f"Prediction for new sample: {prediction}")
-
+    gh = [] 
+    for i in general:
+        for j in i:
+            if j != '?':
+                gh.append(i)
+                break
+    print("\nFinal Specific hypothesis:\n", specific)
+    print("\nFinal General hypothesis:\n", gh)
 
 
 #ANN WITH BACK PROPAGATION
